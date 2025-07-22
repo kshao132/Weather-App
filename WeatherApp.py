@@ -2,6 +2,7 @@ import requests
 from datetime import datetime
 import tkinter as tk
 from tkinter import ttk
+from tkinter import font
 
 baseurl = 'http://api.weatherstack.com/'
 endpoint = 'current'
@@ -15,7 +16,6 @@ def calculateWeather(city):
     try:    
         response = requests.get(baseurl + endpoint + f'?access_key=582c814e46105afc5767dc7e333b894a&query={city}')
         data = response.json()
-        print(data)
         if "error" in data: #Checks if API reponse contains an error (e.g. query entered is invalid)
             print(f"An error occurred when abstracting data. Error: {data['error']['info']}")
             return
@@ -52,11 +52,15 @@ class MyGUI:
         self.root.bind("<Configure>", self.resize)      #detect window resizing
         self.root.title("Weather App")  
 
+        labelSize, entrySize, displayInfoSize = self.fontDimensions()
         #FONT SIZES
-        # self.labelFont = 
+        self.labelFont = font.Font(family="SF Pro", size=labelSize, weight="bold")
+        self.entryFont = font.Font(family="SF Pro", size=entrySize)
+        self.displayInfoFont = font.Font(family="SF Pro", size=displayInfoSize)
 
 
-        self.label = tk.Label(self.root, text="Weather Information", font=('SF Pro',30, "bold"))    #create weather app label
+        self.label = tk.Label(self.root, text="Weather Information")    #create weather app label
+        self.label.config(font=self.labelFont)
         
         frameWidth, frameHeight = self.frameDimensions(self.root, 0.3, 0.05)       
         self.label.pack(pady=(frameHeight/2))
@@ -67,8 +71,10 @@ class MyGUI:
         self.enterFrame.pack_propagate(False) 
 
 
-        self.enterCity = tk.Entry(self.enterFrame, font=('SF Pro', 25))         #create entry to type in city name
-        self.enterCity.bind("<Return>", self.fetchAndDisplay)
+        self.enterCity = tk.Entry(self.enterFrame)         #create entry to type in city name
+        self.enterCity.config(font=self.entryFont)
+
+        self.enterCity.bind("<Return>", self.fetchAndDisplay)                   #binds enter key to enter button
         self.enterCity.pack(side='left', padx=(5,10), expand=True, fill = 'x')
 
         self.enterButton = ttk.Button(self.enterFrame, text="Enter", command = self.fetchAndDisplay)        #create enter button
@@ -79,7 +85,8 @@ class MyGUI:
         self.displayFrame.pack(pady=frameHeight)
         self.displayFrame.pack_propagate(False)
 
-        self.displayInfo = tk.Text(self.displayFrame,height=9, font=('SF Pro', 60),bg=self.root['bg'], fg="white",bd=0, highlightthickness=0)
+        self.displayInfo = tk.Text(self.displayFrame,height=9,bg=self.root['bg'], fg="white",bd=0, highlightthickness=0)
+        self.displayInfo.config(font=self.displayInfoFont)
         self.displayInfo.config(state="disabled")
         self.displayInfo.pack(padx=(frameHeight/2))
 
@@ -94,6 +101,15 @@ class MyGUI:
         frameHeight = int(screenHeight * yprop)
 
         return frameWidth, frameHeight
+
+    def fontDimensions(self):
+        screenHeight = self.root.winfo_screenheight()
+
+        displayFont = int(screenHeight * 0.05)
+        labelFont = int(displayFont * 0.6)
+        entryFont = int(displayFont * 0.4)
+
+        return labelFont, entryFont, displayFont
     
     def displayWeather(self, weatherInfo):  #displays weather information onto the textbox
         self.displayInfo.config(state="normal")
@@ -107,11 +123,28 @@ class MyGUI:
         weatherInfo = calculateWeather(city)
         self.displayWeather(weatherInfo)
     
-    def resize(self):
+    def resize(self, event):
         width = self.root.winfo_width()
         height = self.root.winfo_height()
 
         self.resizeWidgets(width, height)
+    
+    def resizeWidgets(self, width, height):
+        textFont = max(10, int(height * 0.05))
+
+        #RESIZE WIDGET
+        self.displayInfoFont.configure(size=textFont)
+        self.labelFont.configure(size=int(textFont*0.6))
+        self.entryFont.configure(size=int(textFont*0.4))
+
+        self.displayInfo.config(font=self.displayInfoFont)
+        self.label.config(font=self.labelFont)
+        self.enterCity.config(font=self.entryFont)
+
+        #RESIZE FRAMES
+        self.enterFrame.config(width=int(width*0.3),height=int(height*0.05))
+        self.displayFrame.config(width=int(width*0.9),height=int(height*0.7))
+
 
 
 MyGUI()
